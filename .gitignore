@@ -8,6 +8,8 @@ bin/
 *.out
 .env 
 
+/configs/*.yaml 
+
 # IDE / Editor files
 .vscode/
 .idea/

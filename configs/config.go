@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/AlwaysAsLearner/fast-chat/backend/internal/utils"
 	"github.com/spf13/viper"
 )
@@ -34,20 +36,22 @@ database:
 
 */
 
-type DatabaseConfig struct {
+type DBConfig struct {
 	Driver   string `mapstructure:"driver"`
 	Host     string `mapstructure:"host"`
 	Port     int    `mapstructure:"port"`
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
 	Dbname   string `mapstructure:"dbname"`
+	SSLMode  string `mapstructure:"ssl_mode"`
+	TimeZone string `mapstructure:"time_zone"`
 }
 
 // Our config accesors availabe for other packages and main program
 var JWT JWTConfig
 var Logger LoggerConfig
 var WebSocket WebSocketConfig
-var DB DatabaseConfig
+var DB DBConfig
 
 func Load() {
 	viper.SetConfigType("yaml")
@@ -70,4 +74,11 @@ func Load() {
 
 	utils.ReadConfig("database", &DB)
 
+}
+
+func (db *DBConfig) ToDsn() string {
+	return fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
+		db.Host, db.User, db.Password, db.Dbname, db.Port, db.SSLMode, db.TimeZone,
+	)
 }
