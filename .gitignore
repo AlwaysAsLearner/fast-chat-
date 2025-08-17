@@ -1,0 +1,14 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+/tmp
+bin/
+*.out
+.env 
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,3 @@
+jwt:
+  secret: "supersecretkey"
+  expiration_minutes: 60

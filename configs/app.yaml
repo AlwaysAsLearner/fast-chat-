@@ -1,0 +1,4 @@
+app:
+  name: "chat-service"
+  port: 8080
+  env: "development"
