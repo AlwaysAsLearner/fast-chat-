@@ -2,8 +2,6 @@ package config
 
 import (
 	"fmt"
-
-	"github.com/AlwaysAsLearner/fast-chat/backend/internal/utils"
 	"github.com/spf13/viper"
 )
 
@@ -72,7 +70,7 @@ func Load() {
 	viper.ReadInConfig()
 	viper.UnmarshalKey("websocket", &WebSocket)
 
-	utils.ReadConfig("database", &DB)
+	ReadConfig("database", &DB)
 
 }
 
