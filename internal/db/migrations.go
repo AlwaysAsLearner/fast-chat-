@@ -8,7 +8,7 @@ import (
 
 func Migrate() {
 	log.Println("Running Migrations")
-	err := DB.AutoMigrate(&model.User{})
+	err := DB.AutoMigrate(&model.User{}, &model.Chatroom{}, &model.ChatroomMember{})
 	if err != nil {
 		log.Fatal("Migration Failed ", err)
 	}
