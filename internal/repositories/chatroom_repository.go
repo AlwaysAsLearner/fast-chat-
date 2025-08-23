@@ -14,6 +14,13 @@ type ChatroomRepository struct {
 	DB *gorm.DB
 }
 
+type ChatroomInfo struct {
+	ID          uint
+	Name        string
+	MemberCount int64
+	OwnerID     uint
+}
+
 func NewChatroomRepository(db *gorm.DB) *ChatroomRepository {
 	return &ChatroomRepository{
 		DB: db,
@@ -50,17 +57,34 @@ func (c *ChatroomRepository) GetByName(name string) (*model.Chatroom, error) {
 	return &chatroom, nil
 }
 
-func (c *ChatroomRepository) GetPublicChatrooms() ([]model.Chatroom, error) {
+func (c *ChatroomRepository) GetPublicChatrooms(page, limit int, q string) ([]model.Chatroom, int64, error) {
 	var chatrooms []model.Chatroom
-	err := c.DB.Model(&model.Chatroom{}).Where("is_private = ?", false).Find(&chatrooms).Error
+	var total int64
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+
+	query := c.DB.Model(&model.Chatroom{}).Where("is_private = ?", false)
+	query.Count(&total)
+	if q != "" {
+		searchTerm := fmt.Sprintf("%%%s%%", q)
+		query = query.Where("name ILIKE ?", searchTerm) // ILIKE for case-insensitive search (Postgres)
+		query.Count(&total)
+	}
+
+	offset := (page - 1) * limit
+	err := query.Limit(limit).Offset(offset).Find(&chatrooms).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("no public chatrooms found")
+			return nil, 0, fmt.Errorf("no public chatrooms found")
 		}
 		log.Println("Unexpected error while fetching public chatrooms: ", err)
-		return nil, err
+		return nil, 0, err
 	}
-	return chatrooms, nil
+	return chatrooms, total, nil
 }
 
 func (c *ChatroomRepository) AddUserToChatroom(chatId, userId uint, isAdmin bool) error {
@@ -81,8 +105,8 @@ func (c *ChatroomRepository) AddUserToChatroom(chatId, userId uint, isAdmin bool
 		}
 		return err
 	}
-	member.ChatroomId = chatId
-	member.UserId = userId
+	member.ChatroomID = chatId
+	member.UserID = userId
 	member.IsAdmin = isAdmin
 	member.JoinedAt = time.Now().UTC()
 	err = c.DB.Create(&member).Error
@@ -104,4 +128,22 @@ func (c *ChatroomRepository) GetUserChatrooms(userId uint) ([]model.Chatroom, er
 		return nil, err
 	}
 	return chatrooms, nil
+}
+
+func (c *ChatroomRepository) GetMemberCount(chatID uint) (int64, error) {
+	var count int64
+	err := c.DB.Model(&model.ChatroomMember{}).Where("chatroom_id = ?", chatID).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return count, err
+}
+
+func (c *ChatroomRepository) GetOwner(chatID uint) (*model.ChatroomMember, error) {
+	var member model.ChatroomMember
+	err := c.DB.Model(&model.ChatroomMember{}).Where("chatroom_id = ? AND is_admin = true").First(&member).Error
+	if err != nil {
+		return nil, err
+	}
+	return &member, nil
 }

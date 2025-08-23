@@ -6,12 +6,13 @@ import (
 )
 
 type ChatroomMember struct {
-	gorm.Model 
-	ID uint `gorm:"primaryKey"`
-	UserId uint `gorm:"not null"`
-	ChatroomId uint `gorm:"not null"`
-	JoinedAt time.Time `gorm:"not null"`
-	IsAdmin bool `gorm:"default:false; not null"`
+	gorm.Model
+	UserID     uint      `gorm:"not null;index"`
+	ChatroomID uint      `gorm:"not null;index"`
+	JoinedAt   time.Time `gorm:"not null;autoCreateTime"`
+	IsAdmin    bool      `gorm:"not null;default:false"`
+
+	// Relationships
+	User     User     `gorm:"foreignKey:UserID"`
+	Chatroom Chatroom `gorm:"foreignKey:ChatroomID"`
 }
-
-
