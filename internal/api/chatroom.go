@@ -99,8 +99,8 @@ type createChatroomReq struct {
 type ChatroomDTO struct {
 	ID          uint    `json:"id"`
 	Name        string  `json:"name"`
-	Description *string `json:"description, omitempty"`
-	isPrivate   bool    `json:"is_private"`
+	Description *string `json:"description"`
+	IsPrivate   bool    `json:"is_private"`
 	OwnerID     uint    `json:"owner_id"`
 	MemberCount int     `json:"member_count"`
 	CreatedAt   string  `json:"created_at"`
@@ -131,7 +131,7 @@ func (ch *ChatroomHandler) CreateChatroom(w http.ResponseWriter, r *http.Request
 	chatroom, err := ch.Service.CreateChatroom(req.Name, req.Description, req.IsPrivate, userID)
 
 	if err != nil {
-		serverError(w, fmt.Errorf("chatroom name already exists"))
+		serverError(w, err)
 	}
 
 	writeJSON(w, http.StatusCreated, toChatroomDTO(chatroom))
@@ -297,7 +297,7 @@ func toChatroomDTO(c services.Chatroom) ChatroomDTO {
 		ID:          c.ID,
 		Name:        c.Name,
 		Description: c.Description,
-		isPrivate:   c.IsPrivate,
+		IsPrivate:   c.IsPrivate,
 		OwnerID:     c.OwnerID,
 		MemberCount: c.MemberCount,
 		CreatedAt:   c.CreatedAt.String(),

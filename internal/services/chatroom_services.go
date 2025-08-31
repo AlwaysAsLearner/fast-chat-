@@ -1,13 +1,10 @@
 package services
 
 import (
-	"errors"
-	"fmt"
 	"time"
 
 	model "github.com/AlwaysAsLearner/fast-chat/backend/internal/models"
 	"github.com/AlwaysAsLearner/fast-chat/backend/internal/repositories"
-	"gorm.io/gorm"
 )
 
 type ChatroomService struct {
@@ -29,43 +26,11 @@ func NewChatroomService(repo repositories.ChatroomRepository) *ChatroomService {
 }
 
 func (crs *ChatroomService) CreateChatroom(name string, desc *string, isPrivate bool, ownerId uint) (Chatroom, error) {
-	_, err := crs.repo.GetByName(name)
+	/*_, err := crs.repo.GetByName(name)
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// Create a fresh instance instead of using the nil pointer
-			newChatroom := model.Chatroom{
-				Name:        name,
-				Description: desc,
-				IsPrivate:   isPrivate,
-			}
 
-			err = crs.repo.Create(newChatroom)
-			if err != nil {
-				return Chatroom{}, err
-			}
-
-			chatroom, err := crs.repo.GetByName(name)
-			if err != nil {
-				return Chatroom{}, err
-			}
-
-			err = crs.repo.AddUserToChatroom(chatroom.ID, ownerId, true)
-			if err != nil {
-				return Chatroom{}, err
-			}
-
-			count, err := crs.repo.GetMemberCount(newChatroom.ID)
-
-			chatroomservice := Chatroom{
-				ID:          chatroom.ID,
-				Name:        chatroom.Name,
-				Description: chatroom.Description,
-				MemberCount: int(count),
-				OwnerID:     ownerId,
-				CreatedAt:   newChatroom.CreatedAt,
-			}
-			return chatroomservice, nil
 		}
 		// Some other DB error
 		return Chatroom{}, fmt.Errorf("failed to check existing chatroom: %w", err)
@@ -73,6 +38,42 @@ func (crs *ChatroomService) CreateChatroom(name string, desc *string, isPrivate 
 
 	// If no error, chatroom already exists
 	return Chatroom{}, fmt.Errorf("chatroom with name %s already exists", name)
+	*/
+	// Create a fresh instance instead of using the nil pointer
+	newChatroom := model.Chatroom{
+		Name:        name,
+		Description: desc,
+		IsPrivate:   isPrivate,
+	}
+
+	err := crs.repo.DB.Create(&newChatroom).Error
+	if err != nil {
+		return Chatroom{}, err
+	}
+
+	chatroom, err := crs.repo.GetByName(name)
+	if err != nil {
+		return Chatroom{}, err
+	}
+
+	err = crs.repo.AddUserToChatroom(chatroom.ID, ownerId, true)
+	if err != nil {
+		return Chatroom{}, err
+	}
+
+	count, err := crs.repo.GetMemberCount(newChatroom.ID)
+	chatroomservice := Chatroom{
+		ID:          chatroom.ID,
+		Name:        chatroom.Name,
+		Description: chatroom.Description,
+		MemberCount: int(count),
+		OwnerID:     ownerId,
+		CreatedAt:   newChatroom.CreatedAt,
+	}
+	if err != nil {
+		return chatroomservice, err
+	}
+	return chatroomservice, nil
 }
 
 func (crs *ChatroomService) JoinPublicChatroom(chatId, userId uint) error {

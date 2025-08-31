@@ -7,14 +7,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtConfig = config.JWT
-
 type Claims struct {
 	UserID uint `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
 func GenerateToken(userId uint) (string, error) {
+	jwtConfig := config.JWT
 	expirationTime := time.Now().Add(time.Duration(jwtConfig.Expiration) * time.Minute)
 	claims := &Claims{
 		UserID: userId,
@@ -30,6 +29,7 @@ func GenerateToken(userId uint) (string, error) {
 }
 
 func ValidateToken(tokenString string) (*Claims, error) {
+	jwtConfig := config.JWT
 	claims := &Claims{}
 	// This function takes token, claims ( to write data ), function which returns secret key ( token signed with )
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {

@@ -27,8 +27,8 @@ func NewChatroomRepository(db *gorm.DB) *ChatroomRepository {
 	}
 }
 
-func (c *ChatroomRepository) Create(chatroom model.Chatroom) error {
-	return c.DB.Create(&chatroom).Error
+func (c *ChatroomRepository) Create(chatroom *model.Chatroom) error {
+	return c.DB.Model(&model.Chatroom{}).Create(chatroom).Error
 }
 
 func (c *ChatroomRepository) GetById(id uint, isPrivate bool) (*model.Chatroom, error) {
@@ -49,7 +49,7 @@ func (c *ChatroomRepository) GetByName(name string) (*model.Chatroom, error) {
 	err := c.DB.Model(&model.Chatroom{}).Where("name = ?", name).First(&chatroom).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("chatroom with id %s Not found", name)
+			return nil, err
 		}
 		log.Printf("Unexpected error while fetching chatroom by %s: %s", name, err)
 		return nil, err
@@ -98,7 +98,7 @@ func (c *ChatroomRepository) AddUserToChatroom(chatId, userId uint, isAdmin bool
 		return err
 	}
 
-	err = c.DB.Model(&model.User{}).Where("id = ? AND is_private=false", userId).Count(&count).Error
+	err = c.DB.Model(&model.User{}).Where("id = ?", userId).Count(&count).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return fmt.Errorf("user with id %d Not found", userId)
@@ -119,7 +119,7 @@ func (c *ChatroomRepository) RemoveUserFromChatroom(chatId, userId uint) error {
 
 func (c *ChatroomRepository) GetUserChatrooms(userId uint) ([]model.Chatroom, error) {
 	var chatrooms []model.Chatroom
-	err := c.DB.Model(&model.Chatroom{}).Where("user_id = ? AND is_private=false", userId).Find(&chatrooms).Error
+	err := c.DB.Model(&model.Chatroom{}).Where("user_id = ? AND is_private = ?", userId, false).Find(&chatrooms).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("no chatrooms found for user with id %d", userId)
@@ -136,7 +136,7 @@ func (c *ChatroomRepository) GetMemberCount(chatID uint) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return count, err
+	return count, nil
 }
 
 func (c *ChatroomRepository) GetOwner(chatID uint) (*model.ChatroomMember, error) {
